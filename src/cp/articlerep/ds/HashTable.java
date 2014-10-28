@@ -34,20 +34,20 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 	@SuppressWarnings("unchecked")
 	@Override
 	public V put(K key, V value) {
-		int pos = this.calcTablePos(key);
+		int pos = this.calcTablePos(key);//calculate position for insertion at the table
 		Node n = this.table[pos];
 
 		while (n != null && !n.key.equals(key)) {
-			n = n.next;
+			n = n.next; //colision detected
 		}
 
-		if (n != null) {
+		if (n != null) { // node value replacement
 			V oldValue = (V) n.value;
 			n.value = value;
 			return oldValue;
 		}
 
-		Node nn = new Node(key, value, this.table[pos]);
+		Node nn = new Node(key, value, this.table[pos]); // create node
 		this.table[pos] = nn;
 
 		return null;

@@ -56,7 +56,7 @@ public class Worker {
 		this.keywords = keywords;
 		this.findList = findList;
 
-		populateWordArray();
+		populateWordArray(); 
 
 		this.workers = null;
 		this.jobs = null;
@@ -73,7 +73,11 @@ public class Worker {
 	public Repository getRepository() {
 		return this.repository;
 	}
-
+	/*
+	 * Fetch words from dictionary file
+	 * 
+	 * No contention
+	 */
 	private void populateWordArray() {
 		wordArray = new String[dictSize];
 
@@ -148,7 +152,9 @@ public class Worker {
 			}
 			return false;
 		}
-
+		/*
+		 * Generate random articles using word array
+		 */
 		private Article generateArticle() {
 			int i = rand.nextInt(dictSize);
 			Article a = new Article(i, wordArray[i]);
@@ -202,7 +208,7 @@ public class Worker {
 
 			while (running) {
 
-				if (DO_VALIDATION) {
+				if (DO_VALIDATION) { //pause thread to validate
 					boolean done = false;
 
 					while (pause) {
@@ -217,7 +223,7 @@ public class Worker {
 					paused = false;
 				}
 
-				int op = rand.nextInt(100);
+				int op = rand.nextInt(100); //probability
 
 
 				if (op < put) {
@@ -228,10 +234,10 @@ public class Worker {
 					repository.removeArticle(id);
 				} else if (op < put + del + (get / 2)) {
 					List<String> list = generateListOfWords();
-					repository.findArticleByAuthor(list);
+					repository.findArticleByAuthor(list); // 50 % lookup by author
 				} else {
 					List<String> list = generateListOfWords();
-					repository.findArticleByKeyword(list);
+					repository.findArticleByKeyword(list); //other 50 % by keyword
 				}
 
 				count++;
@@ -249,7 +255,7 @@ public class Worker {
 		jobs = new Job[nthreads];
 
 		for (int i = 0; i < nthreads; i++) {
-			jobs[i] = new Job(put, del, get);
+			jobs[i] = new Job(put, del, get); //why sleep ?
 			workers[i] = new Thread(jobs[i]);
 		}
 

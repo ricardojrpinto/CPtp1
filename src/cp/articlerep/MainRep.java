@@ -77,6 +77,8 @@ public class MainRep {
 		long end_time = System.currentTimeMillis();
 
 		run.joinThreads();
+		
+		//validation check at the end?
 
 		System.out.println("Total time: " + ((end_time - start_time) / 1000) + " seconds");
 		System.out.println("Operation rate: "

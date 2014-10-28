@@ -62,7 +62,7 @@ public class Repository {
 		return true;
 	}
 	/*Given an id, remove article from byArticleId, byAuthor, byKeyword tables
-	 * if the 2nd and 3rd 
+	 * 
 	 * */
 	public void removeArticle(int id) {
 		Article a = byArticleId.get(id);
@@ -120,6 +120,7 @@ public class Repository {
 	}
 	/*
 	 * Given a Set A of size #nFindList of authors create a set Pi of articles containing i as author
+	 * It is a 'read' type operation 
 	 * */
 	public List<Article> findArticleByAuthor(List<String> authors) {
 		List<Article> res = new LinkedList<Article>();
@@ -173,7 +174,7 @@ public class Repository {
 		int articleCount = 0;
 		
 		Iterator<Article> aIt = byArticleId.values();
-		while(aIt.hasNext()) {
+		while(aIt.hasNext()) { //for each article in Database check its consistency
 			Article a = aIt.next();
 			
 			articleIds.add(a.getId());
@@ -183,7 +184,7 @@ public class Repository {
 			Iterator<String> authIt = a.getAuthors().iterator();
 			while(authIt.hasNext()) {
 				String name = authIt.next();
-				if (!searchAuthorArticle(a, name)) {
+				if (!searchAuthorArticle(a, name)) { //check if author has article 'a'
 					return false;
 				}
 			}
@@ -192,7 +193,7 @@ public class Repository {
 			Iterator<String> keyIt = a.getKeywords().iterator();
 			while(keyIt.hasNext()) {
 				String keyword = keyIt.next();
-				if (!searchKeywordArticle(a, keyword)) {
+				if (!searchKeywordArticle(a, keyword)) { //check if keyword as reference to article 'a'
 					return false;
 				}
 			}
