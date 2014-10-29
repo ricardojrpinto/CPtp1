@@ -1,0 +1,5 @@
+ time(sec) nThreads nKeys/#hashtablecells %puts %deletes %gets nAuthors nKeywords nFindList
+
+java -Dcp.articlerep.validate=true -cp bin cp/articlerep/MainRep 10 2 2 20 20 60 40 40 3
+
+Hashtable pequena ->  mtas colisões -> processo bloqueado (independentemente da % das op's) -> why? tendo em conta que ainda nao temos locks no codigo
