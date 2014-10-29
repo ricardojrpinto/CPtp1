@@ -160,7 +160,7 @@ public class Worker {
 			Article a = new Article(i, wordArray[i]);
 
 			int nauthors = authors;
-			while (nauthors > 0) {
+			while (nauthors > 0) { //warning: arg's (nKeys and nAuthors/nKeywords) must be consistent otherwise infinite loop!
 				int p = rand.nextInt(dictSize);
 				String word = wordArray[p];
 				if (!contains(a.getAuthors(), word)) {

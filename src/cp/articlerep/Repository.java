@@ -1,6 +1,8 @@
 package cp.articlerep;
 
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Set;
 
 import cp.articlerep.ds.Iterator;
 import cp.articlerep.ds.LinkedList;
@@ -175,7 +177,7 @@ public class Repository {
 		
 		Iterator<Article> aIt = byArticleId.values();
 		while(aIt.hasNext()) { //for each article in Database check its consistency
-			Article a = aIt.next();
+			Article a = aIt.next();			
 			
 			articleIds.add(a.getId());
 			articleCount++;
@@ -196,6 +198,30 @@ public class Repository {
 				if (!searchKeywordArticle(a, keyword)) { //check if keyword as reference to article 'a'
 					return false;
 				}
+			}
+		}
+		
+		/*Invariantes extraordinarias inventadas por nós*/
+		Iterator<List<Article>> byAuthList= byAuthor.values();
+		
+		while(byAuthList.hasNext()){ //verifies if does'nt exists 'phantom' articles i.e if a author
+							//contains an article that does not exists in byArticleId table then it is a inconcistency
+			List<Article> l = byAuthList.next();
+			Iterator<Article> ait = l.iterator();
+			while(ait.hasNext()){
+				if(!byArticleId.contains(ait.next().getId()))
+					return false;
+			}
+		}
+		
+		Iterator<List<Article>> byKWList= byKeyword.values();
+		
+		while(byKWList.hasNext()){ //Same as above but with keywords
+			List<Article> l = byKWList.next();
+			Iterator<Article> ait = l.iterator();
+			while(ait.hasNext()){
+				if(!byArticleId.contains(ait.next().getId()))
+					return false;
 			}
 		}
 		
