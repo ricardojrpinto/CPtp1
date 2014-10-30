@@ -1,9 +1,6 @@
 package cp.articlerep;
 
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
-
 import cp.articlerep.ds.Iterator;
 import cp.articlerep.ds.LinkedList;
 import cp.articlerep.ds.List;
