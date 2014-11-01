@@ -225,7 +225,7 @@ public class Worker {
 
 				int op = rand.nextInt(100); //probability
 
-
+				//synchronized(repository){
 				if (op < put) {
 					Article a = generateArticle();
 					repository.insertArticle(a);
@@ -239,6 +239,7 @@ public class Worker {
 					List<String> list = generateListOfWords();
 					repository.findArticleByKeyword(list); //other 50 % by keyword
 				}
+				//}
 
 				count++;
 

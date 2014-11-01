@@ -79,7 +79,6 @@ public class MainRep {
 		run.joinThreads();
 		
 		//validation check at the end? when the time arg is not a multiple of 5 (n mod 5 != 0)
-
 		System.out.println("Total time: " + ((end_time - start_time) / 1000) + " seconds");
 		System.out.println("Operation rate: "
 				+ Math.round(run.getTotalOperations()

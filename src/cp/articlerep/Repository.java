@@ -32,17 +32,18 @@ public class Repository {
 		if (byArticleId.contains(a.getId()))
 			return false;
 
-		Iterator<String> authors = a.getAuthors().iterator();
+		Iterator<String> authors = a.getAuthors().iterator();//This section needs sync----> Medium or fine lock
 		while (authors.hasNext()) {
 			String name = authors.next();
 
 			List<Article> ll = byAuthor.get(name);
-			if (ll == null) {
+			if (ll == null) {//situaçao possivel: dois threads (t1 e t2) fazem update ao autor 'x' os dois lêm o valor null... o t1 insere uma lista e
+							// um novo artigo o t2 esmaga essa lista com outra nova lista e o seu artigo
 				ll = new LinkedList<Article>();
 				byAuthor.put(name, ll);
 			}
 			ll.add(a);
-		}
+		}//<--------------------------------------
 
 		Iterator<String> keywords = a.getKeywords().iterator();
 		while (keywords.hasNext()) {
@@ -86,11 +87,15 @@ public class Repository {
 					}
 					pos++;
 				}
+				
+				
 				ll.remove(pos);
 				it = ll.iterator();
 				if (!it.hasNext()) { // checks if the list is empty
 					byKeyword.remove(keyword);
 				}
+				
+				
 			}
 		}
 
@@ -109,11 +114,13 @@ public class Repository {
 					}
 					pos++;
 				}
+				
 				ll.remove(pos);
 				it = ll.iterator(); 
 				if (!it.hasNext()) { // checks if the list is empty
 					byAuthor.remove(name);
 				}
+				
 			}
 		}
 	}
@@ -180,6 +187,7 @@ public class Repository {
 			articleCount++;
 			
 			// check the authors consistency
+			System.out.println("Checking Authors Consistency");
 			Iterator<String> authIt = a.getAuthors().iterator();
 			while(authIt.hasNext()) {
 				String name = authIt.next();
@@ -187,7 +195,8 @@ public class Repository {
 					return false;
 				}
 			}
-			
+			System.out.println("Checking Authors Consistency Done");
+			System.out.println("Checking KeyWords Consistency");
 			// check the keywords consistency
 			Iterator<String> keyIt = a.getKeywords().iterator();
 			while(keyIt.hasNext()) {
@@ -196,9 +205,13 @@ public class Repository {
 					return false;
 				}
 			}
-		}
+			System.out.println("Checking KeyWords Consistency Done");
+		}	
+		
 		
 		/*Invariantes extraordinarias inventadas por nós*/
+		
+		System.out.println("Checking for inconsistent articles at Authors Table");
 		Iterator<List<Article>> byAuthList= byAuthor.values();
 		
 		while(byAuthList.hasNext()){ //verifies if does'nt exists 'phantom' articles i.e if a author
@@ -210,7 +223,9 @@ public class Repository {
 					return false;
 			}
 		}
+		System.out.println("No inconsistency has been found!");
 		
+		System.out.println("Checking for inconsistent articles at KeyWords Table");
 		Iterator<List<Article>> byKWList= byKeyword.values();
 		
 		while(byKWList.hasNext()){ //Same as above but with keywords
@@ -221,7 +236,9 @@ public class Repository {
 					return false;
 			}
 		}
+		System.out.println("No inconsistency has been found!");
 		
+		System.out.println("Checking for article duplicated values");
 		return articleCount == articleIds.size();
 	}
 	/*
