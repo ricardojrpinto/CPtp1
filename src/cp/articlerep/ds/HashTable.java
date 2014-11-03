@@ -161,9 +161,11 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 	}
 
 	@Override
-	public boolean contains(K key) {
+	public synchronized boolean contains(K key) {
 		return get(key) != null;
 	}
+	
+
 
 	/**
 	 * No need to protect this method from concurrent interactions
