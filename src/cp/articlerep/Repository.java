@@ -16,43 +16,20 @@ public class Repository {
 	private Map<String, List<Article>> byAuthor;
 	private Map<String, List<Article>> byKeyword;
 	private Map<Integer, Article> byArticleId;
-	private boolean [] usedID;
 	
 	public Repository(int nkeys) {
 		this.byAuthor = new HashTable<String, List<Article>>(nkeys*2);
 		this.byKeyword = new HashTable<String, List<Article>>(nkeys*2);
-		this.byArticleId = new HashTable<Integer, Article>(nkeys*2);
-		this.usedID = new boolean [nkeys];
-		
-		for(int i = 0; i < nkeys; i++)
-			usedID[i] = false;
-	}
-	
-	public synchronized boolean markID(int id){
-		if(usedID[id])
-			return false;
-			
-		usedID[id] = true;
-		
-		return usedID[id];
-	}
-	
-	public synchronized void unMarkID(int id){
-		usedID[id] =false;
+		this.byArticleId = new HashTable<Integer, Article>(nkeys*2);	
 	}
 		
 	public boolean insertArticle(Article a) {
-		
-		//if(!a.mark())//wat
-			//return false;
 		
 		byArticleId.lock(a.getId());
 		
 		boolean v = protectedInsertion(a);
 		
 		byArticleId.unlock(a.getId());
-		
-		//a.unMark();
 		
 		return v;
 	}
@@ -66,22 +43,21 @@ public class Repository {
 		if (byArticleId.contains(a.getId()))
 			return false;
 
-		Iterator<String> authors = a.getAuthors().iterator();//This section needs sync----> Medium or fine lock
+		Iterator<String> authors = a.getAuthors().iterator();
 		while (authors.hasNext()) {
 			String name = authors.next();
 			
 			byAuthor.lock(name);
 			
 			List<Article> ll = byAuthor.get(name);
-			if (ll == null) {//situaçao possivel: dois threads (t1 e t2) fazem update ao autor 'x' os dois lêm o valor null... o t1 insere uma lista e
-							// um novo artigo o t2 esmaga essa lista com outra nova lista e o seu artigo
+			if (ll == null) {
 				ll = new LinkedList<Article>();
 				byAuthor.put(name, ll);
 			}
 			ll.add(a);
 			
 			byAuthor.unlock(name);
-		}//<--------------------------------------
+		}
 
 		Iterator<String> keywords = a.getKeywords().iterator();
 		while (keywords.hasNext()) {
@@ -107,13 +83,13 @@ public class Repository {
 	/*Given an id, remove article from byArticleId, byAuthor, byKeyword tables
 	 */
 	public void removeArticle(int id){
-		Article a = byArticleId.get(id);
 
-		if (a == null)
-			return;
-		
-		//if (a.mark())
-		byArticleId.lock(a.getId());
+		byArticleId.lock(id);
+			Article a = byArticleId.get(id);
+			if (a == null){
+				byArticleId.unlock(id);
+				return;
+			}
 			protectedRemoval(a);
 		byArticleId.unlock(a.getId());
 	}
@@ -147,7 +123,6 @@ public class Repository {
 				if (!it.hasNext()) { // checks if the list is empty
 					byKeyword.remove(keyword);
 				}
-				
 				
 			}
 			
@@ -274,8 +249,8 @@ public class Repository {
 		System.out.println("Checking for inconsistent articles at Authors Table");
 		Iterator<List<Article>> byAuthList= byAuthor.values();
 		
-		while(byAuthList.hasNext()){ //verifies if does'nt exists 'phantom' articles i.e if a author
-							//contains an article that does not exists in byArticleId table then it is a inconcistency
+		while(byAuthList.hasNext()){ //verifies if does not exists 'phantom' articles i.e if a author
+							//contains an article that does not exists in byArticleId table then there is an inconcistency
 			List<Article> l = byAuthList.next();
 			Iterator<Article> ait = l.iterator();
 			while(ait.hasNext()){

@@ -10,33 +10,12 @@ public class Article {
 	private String name;
 	private List<String> authors;
 	private List<String> keywords;
-	private boolean marked;
 	
 	public Article(int id, String name) {
 		this.id = id;
 		this.name = name;
 		this.authors = new LinkedList<String>();
 		this.keywords = new LinkedList<String>();
-		this.marked = false;
-	}
-	
-	public synchronized boolean mark(){
-		if(marked)return false;
-		
-		marked = true;
-		
-		return marked;
-	}
-	
-	public synchronized void unMark(){
-		
-		marked = false;
-		
-	}
-	
-	
-	public boolean isMarked(){
-		return marked;
 	}
 	
 	public void addAuthor(String author) {

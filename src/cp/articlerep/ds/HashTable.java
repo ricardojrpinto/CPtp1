@@ -37,9 +37,7 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 			lock.unlock();
 		}
 		
-		
 	}
-	
 
 	private Node[] table;
 
@@ -69,22 +67,11 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 		((headSentinel) this.table[pos]).unlockList();
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public V put(K key, V value){
 		
 		int pos = this.calcTablePos(key);//calculate position for insertion at the table
-		
-		//((headSentinel) this.table[pos]).lockList();//lock colision list
-		
-		V v = protectedIns(key,value,pos);
-		
-		//((headSentinel) this.table[pos]).unlockList();//unlock colision list
-		
-		return v;
-		
-	}
-	@SuppressWarnings("unchecked")
-	private V protectedIns(K key, V value, int pos) {
 		
 		Node n = this.table[pos].next;
 
@@ -102,24 +89,14 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 		this.table[pos].next = nn;
 		
 		return null;
+		
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public V remove(K key){
 		
 		int pos = this.calcTablePos(key);
-		
-		//((headSentinel) this.table[pos]).lockList();
-		
-		V v = protectedRemoval(key,pos);
-		
-		//((headSentinel) this.table[pos]).unlockList(); 
-		
-		return v;
-	}
-
-	@SuppressWarnings("unchecked")
-	public V protectedRemoval(K key, int pos) {
 		
 		Node p = this.table[pos].next;
 		if (p == null) {
@@ -139,14 +116,15 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 		}
 
 		if (n == null) {
-			//((headSentinel) this.table[pos]).unlockList(); //unlock colision list
 			return null;
 		}
 
 		p.next = n.next;
 		
 		return (V) n.value;
+		
 	}
+
 
 	@SuppressWarnings("unchecked")
 	@Override

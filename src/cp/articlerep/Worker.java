@@ -30,7 +30,7 @@ public class Worker {
 
 	private Repository repository;
 
-	private volatile boolean running; // ? volatile ?
+	private volatile boolean running; 
 	private volatile boolean pause;
 
 	private int totalOperations;
@@ -225,18 +225,14 @@ public class Worker {
 				
 				int op = rand.nextInt(100); //probability
 
-				//synchronized(repository){
+			
 				if (op < put) {
 					Article a = generateArticle();
-			
-					if(repository.markID(a.getId()))
-						repository.insertArticle(a);
+					repository.insertArticle(a);
 									
 				} else if (op < put + del) {
 					int id = rand.nextInt(dictSize);
 					repository.removeArticle(id);
-					
-					repository.unMarkID(id);
 					
 				} else if (op < put + del + (get / 2)) {
 					List<String> list = generateListOfWords();
@@ -245,8 +241,7 @@ public class Worker {
 					List<String> list = generateListOfWords();
 					repository.findArticleByKeyword(list); //other 50 % by keyword
 				}
-				//}
-
+				
 				count++;
 
 			}
