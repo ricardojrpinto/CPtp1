@@ -131,7 +131,7 @@ public class Worker {
 		 * @param get percentage of find article operations, which is 
 		 * 			  shared by findByAuthor and findByKeyword
 		 */
-		public Job(int put, int del, int get) {
+		public Job(int put, int del, int get) {			//threadsafe
 			this.put = put;
 			this.del = del;
 			this.get = get;
@@ -144,7 +144,7 @@ public class Worker {
 			paused = true;
 		}
 
-		private boolean contains(List<String> list, String word) {
+		private boolean contains(List<String> list, String word) {	//threadsafe
 			Iterator<String> it = list.iterator();
 			while (it.hasNext()) {
 				if (it.next().compareTo(word) == 0)
@@ -155,8 +155,8 @@ public class Worker {
 		/*
 		 * Generate random articles using word array
 		 */
-		private Article generateArticle() {
-			int i = rand.nextInt(dictSize);
+		private Article generateArticle() {				//threadsafe
+			int i = rand.nextInt(dictSize);	
 			Article a = new Article(i, wordArray[i]);
 
 			int nauthors = authors;
@@ -182,7 +182,7 @@ public class Worker {
 			return a;
 		}
 
-		private List<String> generateListOfWords() {
+		private List<String> generateListOfWords() {	//threadsafe
 			List<String> res = new LinkedList<String>();
 			int nwords = findList;
 
@@ -225,7 +225,7 @@ public class Worker {
 
 				int op = rand.nextInt(100); //probability
 
-				//synchronized(repository){
+
 				if (op < put) {
 					Article a = generateArticle();
 					repository.insertArticle(a);
@@ -239,7 +239,6 @@ public class Worker {
 					List<String> list = generateListOfWords();
 					repository.findArticleByKeyword(list); //other 50 % by keyword
 				}
-				//}
 
 				count++;
 

@@ -45,7 +45,7 @@ public class Repository {
 			ll.add(a);
 		}//<--------------------------------------
 
-		Iterator<String> keywords = a.getKeywords().iterator();
+		Iterator<String> keywords = a.getKeywords().iterator();		//threadsafe - a lista de keywords num obj Article nunca é modificada
 		while (keywords.hasNext()) {
 			String keyword = keywords.next();
 
@@ -72,7 +72,7 @@ public class Repository {
 		
 		byArticleId.remove(id);
 
-		Iterator<String> keywords = a.getKeywords().iterator();
+		Iterator<String> keywords = a.getKeywords().iterator();		//threadsafe - a lista de autores num obj Article nunca é modificada
 		while (keywords.hasNext()) {
 			String keyword = keywords.next();
 

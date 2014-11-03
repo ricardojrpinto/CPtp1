@@ -33,7 +33,7 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public V put(K key, V value) {
+	public synchronized V put(K key, V value) {
 		int pos = this.calcTablePos(key);//calculate position for insertion at the table
 		Node n = this.table[pos];
 
@@ -55,7 +55,7 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public V remove(K key) {
+	public synchronized V remove(K key) {
 		int pos = this.calcTablePos(key);
 		Node p = this.table[pos];
 		if (p == null) {
@@ -84,7 +84,7 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public V get(K key) {
+	public synchronized V get(K key) {
 		int pos = this.calcTablePos(key);
 		Node n = this.table[pos];
 		while (n != null && !n.key.equals(key)) {
@@ -94,9 +94,11 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 	}
 
 	@Override
-	public boolean contains(K key) {
+	public synchronized boolean contains(K key) {
 		return get(key) != null;
 	}
+	
+
 
 	/**
 	 * No need to protect this method from concurrent interactions
