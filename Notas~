@@ -1,0 +1,41 @@
+ time(sec) nThreads nKeys/#hashtablecells %puts %deletes %gets nAuthors nKeywords nFindList
+
+java -Dcp.articlerep.validate=true -cp bin cp/articlerep/MainRep 10 2 2 20 20 60 40 40 3
+
+java -Dcp.articlerep.validate=true -cp bin cp/articlerep/MainRep 10 2 2 0 0 100 40 40 3
+
+ava -Dcp.articlerep.validate=true -cp bin cp/articlerep/MainRep 10 1 20 20 20 60 20 20 10
+
+
+---OBS---
+
+Hashtable pequena ->  mtas colisões -> processo bloqueado (independentemente da % das op's) -> why? tendo em conta que ainda nao temos locks no codigo (RES: Os argumentos passados na consola devem ser consistentes)
+
+Ciclo da main -> Cada iteração com duração de 1 seg -> se for passado uma duração que n é multiplo de 5 no ultimo segundo de execução n é feito um check a consistencia da DB, pelo que a pós condição pode n ser verificada
+
+---OBS---
+
+-----Invariantes----
+
+Invariante nº 1 - Verificar se se cada artigo é unico na BD:
+		-> Apesar de ser pré condição durante a inserção que o artigo deve ser único, no contexto de multi thread essa invariante deve 	ser verificada...(provavelmente esta invariante é excusada porque: na especificação da HashTable em caso de colisão em que o nó a inserir ja existe, o nó antigo é substituido pelo novo. No caso em que n threads tentam inserir nós iguais no mesmo instante de tempo(keys iguais), apenas uma inserção persiste i.e a penultima inserção é esmagada e nunca existirá elementos repetidos numa mesma hashtable [acho eu]) ----->!! Esta Invariante já é verificada, no validate do repositorio, no final com a condição (return articleCount == articleIds.size()). Pois o HashSet articleIds e' uma estrutura que remove duplicados, se no final os sizes forem diferentes -> existem duplicados
+
+Invariante nº2 - Verificar existência de artigos 'fantasma'
+		-> Verificar em todos os artigos de keywords e autores se estes existem na byArticle table
+		Se um artigo existir numa tabela byKeyw ou byAuth mas não na respetiva byArticleId então é um artigo fantasma
+
+-----Invariantes-----
+
+----Estrategias de sincronizacao----
+
+ ->Listas de artigos nas tabelas byAuthor e byKeyword:
+	
+	Garantir a consistencia destas listas através de lock's...Lock's de grao grosso? medio ou fino? ou nada de locks? -> Uma boa solução seria adquirir um lock do tipo médio sobre as listas de modo a que o acesso a mesma seja exclusivo. Outra solucao seria usar hand over hand locking (lock's fino) sobre os nos das listas, Mas o setor disse ao Sampaio e ao Sieberger para n usar isto pq em principio as listas seriam pequenas (n me convenceu). Usamos estas duas estrategias e comparamos atraves de testes se neste problema os locks fino sobre as listas otimizam a execução.
+
+ -> Consistencia entre tabelas byArticleId e byAuthor, byKeyword
+	
+	Ainda nao pensei sobre isto
+  
+	
+
+
