@@ -153,6 +153,7 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 	public V get(K key) { //read thread's will see the last update of the hashmap ... no need for sync
 		int pos = this.calcTablePos(key);
 		Node n = this.table[pos].next;
+		
 		while (n != null && !n.key.equals(key)) {
 			n = n.next;
 		}

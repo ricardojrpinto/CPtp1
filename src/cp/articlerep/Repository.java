@@ -61,7 +61,7 @@ public class Repository {
 	 * Given an article, for each author and keyword refresh byAuthor and byKeyword tables
 	 * Insert Article in byArticleId table
 	 * */
-	public boolean protectedInsertion(Article a) {
+	private boolean protectedInsertion(Article a) {
 
 		if (byArticleId.contains(a.getId()))
 			return false;
@@ -107,21 +107,28 @@ public class Repository {
 	/*Given an id, remove article from byArticleId, byAuthor, byKeyword tables
 	 */
 	public void removeArticle(int id){
-		Article a = byArticleId.get(id);
-
-		if (a == null)
-			return;
 		
+		//Article a = byArticleId.get(id);
+
+//		if (a == null)
+//			return;
 		//if (a.mark())
-		byArticleId.lock(a.getId());
+		//byArticleId.lock(a.getId());
+		byArticleId.lock(id);
+			Article a = byArticleId.get(id);
+			if(a == null){
+				byArticleId.unlock(id);
+				return;
+			}
+				
 			protectedRemoval(a);
 		byArticleId.unlock(a.getId());
 	}
 	
-	public void protectedRemoval(Article a) {
+	private void protectedRemoval(Article a) {
 		
 		int id = a.getId();
-		byArticleId.remove(id);
+	
 
 		Iterator<String> keywords = a.getKeywords().iterator();
 		while (keywords.hasNext()) {
@@ -150,7 +157,7 @@ public class Repository {
 				
 				
 			}
-			
+			byArticleId.remove(id);
 			byKeyword.unlock(keyword);
 		}
 
