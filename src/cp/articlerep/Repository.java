@@ -1,6 +1,7 @@
 package cp.articlerep;
 
 import java.util.HashSet;
+
 import cp.articlerep.ds.Iterator;
 import cp.articlerep.ds.LinkedList;
 import cp.articlerep.ds.List;
@@ -15,19 +16,52 @@ public class Repository {
 	private Map<String, List<Article>> byAuthor;
 	private Map<String, List<Article>> byKeyword;
 	private Map<Integer, Article> byArticleId;
-
+	private boolean [] usedID;
+	
 	public Repository(int nkeys) {
 		this.byAuthor = new HashTable<String, List<Article>>(nkeys*2);
 		this.byKeyword = new HashTable<String, List<Article>>(nkeys*2);
 		this.byArticleId = new HashTable<Integer, Article>(nkeys*2);
+		this.usedID = new boolean [nkeys];
+		
+		for(int i = 0; i < nkeys; i++)
+			usedID[i] = false;
 	}
 	
+	public synchronized boolean markID(int id){
+		if(usedID[id])
+			return false;
+			
+		usedID[id] = true;
+		
+		return usedID[id];
+	}
+	
+	public synchronized void unMarkID(int id){
+		usedID[id] =false;
+	}
+		
+	public boolean insertArticle(Article a) {
+		
+		//if(!a.mark())//wat
+			//return false;
+		
+		byArticleId.lock(a.getId());
+		
+		boolean v = protectedInsertion(a);
+		
+		byArticleId.unlock(a.getId());
+		
+		//a.unMark();
+		
+		return v;
+	}
 	/*
 	 * Article insertion in Database: 
 	 * Given an article, for each author and keyword refresh byAuthor and byKeyword tables
 	 * Insert Article in byArticleId table
 	 * */
-	public boolean insertArticle(Article a) {
+	public boolean protectedInsertion(Article a) {
 
 		if (byArticleId.contains(a.getId()))
 			return false;
@@ -35,7 +69,9 @@ public class Repository {
 		Iterator<String> authors = a.getAuthors().iterator();//This section needs sync----> Medium or fine lock
 		while (authors.hasNext()) {
 			String name = authors.next();
-
+			
+			byAuthor.lock(name);
+			
 			List<Article> ll = byAuthor.get(name);
 			if (ll == null) {//situaçao possivel: dois threads (t1 e t2) fazem update ao autor 'x' os dois lêm o valor null... o t1 insere uma lista e
 							// um novo artigo o t2 esmaga essa lista com outra nova lista e o seu artigo
@@ -43,39 +79,56 @@ public class Repository {
 				byAuthor.put(name, ll);
 			}
 			ll.add(a);
+			
+			byAuthor.unlock(name);
 		}//<--------------------------------------
 
 		Iterator<String> keywords = a.getKeywords().iterator();
 		while (keywords.hasNext()) {
 			String keyword = keywords.next();
-
+			
+			byKeyword.lock(keyword);
+			
 			List<Article> ll = byKeyword.get(keyword);
 			if (ll == null) {
 				ll = new LinkedList<Article>();
 				byKeyword.put(keyword, ll);
 			} 
 			ll.add(a);
+			
+			byKeyword.unlock(keyword);
 		}
 
 		byArticleId.put(a.getId(), a);
 
 		return true;
 	}
+	
 	/*Given an id, remove article from byArticleId, byAuthor, byKeyword tables
-	 * 
-	 * */
-	public void removeArticle(int id) {
+	 */
+	public void removeArticle(int id){
 		Article a = byArticleId.get(id);
 
 		if (a == null)
 			return;
 		
+		//if (a.mark())
+		byArticleId.lock(a.getId());
+			protectedRemoval(a);
+		byArticleId.unlock(a.getId());
+	}
+	
+	public void protectedRemoval(Article a) {
+		
+		int id = a.getId();
 		byArticleId.remove(id);
 
 		Iterator<String> keywords = a.getKeywords().iterator();
 		while (keywords.hasNext()) {
 			String keyword = keywords.next();
 
+			byKeyword.lock(keyword);
+			
 			List<Article> ll = byKeyword.get(keyword);
 			if (ll != null) {
 				int pos = 0;
@@ -97,12 +150,16 @@ public class Repository {
 				
 				
 			}
+			
+			byKeyword.unlock(keyword);
 		}
 
 		Iterator<String> authors = a.getAuthors().iterator();
 		while (authors.hasNext()) {
 			String name = authors.next();
-
+			
+			byAuthor.lock(name);
+			
 			List<Article> ll = byAuthor.get(name);
 			if (ll != null) {
 				int pos = 0;
@@ -122,6 +179,9 @@ public class Repository {
 				}
 				
 			}
+			
+			byAuthor.unlock(name);
+			
 		}
 	}
 	/*
@@ -238,9 +298,17 @@ public class Repository {
 		}
 		System.out.println("No inconsistency has been found!");
 		
+		System.out.println("Checking for hashmap's consistency");
+		
+		if(!byArticleId.validate() || !byKeyword.validate() || !byArticleId.validate()) //validate hashmap's
+			return false;
+		
+		System.out.println("Hashmap validation done");
+		
 		System.out.println("Checking for article duplicated values");
 		return articleCount == articleIds.size();
 	}
+	
 	/*
 	 * Verifies if author has article a
 	 */

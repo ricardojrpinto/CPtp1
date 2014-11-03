@@ -222,16 +222,22 @@ public class Worker {
 					}
 					paused = false;
 				}
-
+				
 				int op = rand.nextInt(100); //probability
 
 				//synchronized(repository){
 				if (op < put) {
 					Article a = generateArticle();
-					repository.insertArticle(a);
+			
+					if(repository.markID(a.getId()))
+						repository.insertArticle(a);
+									
 				} else if (op < put + del) {
 					int id = rand.nextInt(dictSize);
 					repository.removeArticle(id);
+					
+					repository.unMarkID(id);
+					
 				} else if (op < put + del + (get / 2)) {
 					List<String> list = generateListOfWords();
 					repository.findArticleByAuthor(list); // 50 % lookup by author

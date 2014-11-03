@@ -1,5 +1,8 @@
 package cp.articlerep.ds;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * @author Ricardo Dias
  */
@@ -16,6 +19,27 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 			this.next = next;
 		}
 	}
+	
+	private static class headSentinel extends Node{
+		
+		Lock lock;
+		
+		public headSentinel(){
+			super(null,null,null); 
+			lock = new ReentrantLock();
+			}
+		
+		public void lockList(){
+			lock.lock();
+		}
+		
+		public void unlockList(){
+			lock.unlock();
+		}
+		
+		
+	}
+	
 
 	private Node[] table;
 
@@ -25,17 +49,44 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 
 	public HashTable(int size) {
 		this.table = new Node[size];
+		for(int i = 0; i < size;i++)
+		{
+			table[i] = new headSentinel();
+			}
 	}
 
 	private int calcTablePos(K key) {
 		return Math.abs(key.hashCode()) % this.table.length;
 	}
-
-	@SuppressWarnings("unchecked")
+	
+	public void lock(K key){
+		int pos = this.calcTablePos(key);
+		((headSentinel) this.table[pos]).lockList();
+	}
+	
+	public void unlock(K key){
+		int pos = this.calcTablePos(key);
+		((headSentinel) this.table[pos]).unlockList();
+	}
+	
 	@Override
-	public V put(K key, V value) {
+	public V put(K key, V value){
+		
 		int pos = this.calcTablePos(key);//calculate position for insertion at the table
-		Node n = this.table[pos];
+		
+		//((headSentinel) this.table[pos]).lockList();//lock colision list
+		
+		V v = protectedIns(key,value,pos);
+		
+		//((headSentinel) this.table[pos]).unlockList();//unlock colision list
+		
+		return v;
+		
+	}
+	@SuppressWarnings("unchecked")
+	private V protectedIns(K key, V value, int pos) {
+		
+		Node n = this.table[pos].next;
 
 		while (n != null && !n.key.equals(key)) {
 			n = n.next; //colision detected
@@ -47,23 +98,37 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 			return oldValue;
 		}
 
-		Node nn = new Node(key, value, this.table[pos]); // create node
-		this.table[pos] = nn;
-
+		Node nn = new Node(key, value, this.table[pos].next); // create node
+		this.table[pos].next = nn;
+		
 		return null;
+	}
+	
+	@Override
+	public V remove(K key){
+		
+		int pos = this.calcTablePos(key);
+		
+		//((headSentinel) this.table[pos]).lockList();
+		
+		V v = protectedRemoval(key,pos);
+		
+		//((headSentinel) this.table[pos]).unlockList(); 
+		
+		return v;
 	}
 
 	@SuppressWarnings("unchecked")
-	@Override
-	public V remove(K key) {
-		int pos = this.calcTablePos(key);
-		Node p = this.table[pos];
+	public V protectedRemoval(K key, int pos) {
+		
+		Node p = this.table[pos].next;
 		if (p == null) {
 			return null;
 		}
 
 		if (p.key.equals(key)) {
-			this.table[pos] = p.next;
+			this.table[pos].next = p.next;
+			
 			return (V) p.value;
 		}
 
@@ -74,19 +139,20 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 		}
 
 		if (n == null) {
+			//((headSentinel) this.table[pos]).unlockList(); //unlock colision list
 			return null;
 		}
 
 		p.next = n.next;
-
+		
 		return (V) n.value;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public V get(K key) {
+	public V get(K key) { //read thread's will see the last update of the hashmap ... no need for sync
 		int pos = this.calcTablePos(key);
-		Node n = this.table[pos];
+		Node n = this.table[pos].next;
 		while (n != null && !n.key.equals(key)) {
 			n = n.next;
 		}
@@ -111,11 +177,11 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 			private Node advanceToNextBucket() {
 				pos++;
 				while (pos < HashTable.this.table.length
-						&& HashTable.this.table[pos] == null) {
+						&& HashTable.this.table[pos].next == null) {
 					pos++;
 				}
 				if (pos < HashTable.this.table.length)
-					return HashTable.this.table[pos];
+					return HashTable.this.table[pos].next;
 
 				return null;
 			}
@@ -142,6 +208,18 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 	@Override
 	public Iterator<K> keys() {
 		return null;
+	}
+	
+	/*No concurrency -- Hashmap Invariants*/
+	public boolean validate(){
+		
+		for(int i = 0; i < table.length; i++){
+			if(!(table[i] instanceof headSentinel))
+				return false;
+		}
+		
+		return true;
+		
 	}
 
 }

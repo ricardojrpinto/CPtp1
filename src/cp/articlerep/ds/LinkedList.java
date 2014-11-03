@@ -1,10 +1,14 @@
 package cp.articlerep.ds;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * @author Ricardo Dias
  */
 public class LinkedList<V> implements List<V> {
 
+	private Lock lock;
 	public class Node {
 		final private V m_value;
 		private Node m_next;
@@ -35,11 +39,21 @@ public class LinkedList<V> implements List<V> {
 
 	public LinkedList() {
 		m_head = null;
+		lock = new ReentrantLock();
 	}
 
+	public void lock(){
+		lock.lock();
+	}
+	
+	public void unlock(){
+		lock.unlock();
+	}
+		
 	public void add(V value) {
 		m_head = new Node(value, m_head);
 	}
+	
 	
 	public void add(int pos, V value) {
 		
@@ -65,7 +79,6 @@ public class LinkedList<V> implements List<V> {
 		
 		Node f = null;
 		Node n = null;
-		
 		for (n=m_head; n != null && pos > 0; n=n.m_next) {
 			f = n;
 			pos--;
@@ -80,7 +93,6 @@ public class LinkedList<V> implements List<V> {
 			    m_head = n.m_next;
 			}
 		}
-
 		return res;
 	}
 
