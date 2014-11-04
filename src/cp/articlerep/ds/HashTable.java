@@ -1,7 +1,8 @@
 package cp.articlerep.ds;
 
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * @author Ricardo Dias
@@ -22,21 +23,31 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 	
 	private static class headSentinel extends Node{
 		
-		Lock lock;
+		ReadWriteLock rwl;
+		Lock r,w;
 		
 		public headSentinel(){
 			super(null,null,null); 
-			lock = new ReentrantLock();
+			rwl = new ReentrantReadWriteLock();
+			r = rwl.readLock();
+			w = rwl.writeLock();
 			}
 		
-		public void lockList(){
-			lock.lock();
+		public void wrLockList(){
+			w.lock();
 		}
 		
-		public void unlockList(){
-			lock.unlock();
+		public void wrUnlockList(){
+			w.unlock();
 		}
 		
+		public void rdLockList(){
+			r.lock();
+		}
+		
+		public void rdUnlockList(){
+			r.unlock();
+		}
 	}
 
 	private Node[] table;
@@ -57,14 +68,24 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 		return Math.abs(key.hashCode()) % this.table.length;
 	}
 	
-	public void lock(K key){
+	public void writeLock(K key){
 		int pos = this.calcTablePos(key);
-		((headSentinel) this.table[pos]).lockList();
+		((headSentinel) this.table[pos]).wrLockList();
 	}
 	
-	public void unlock(K key){
+	public void writeUnlock(K key){
 		int pos = this.calcTablePos(key);
-		((headSentinel) this.table[pos]).unlockList();
+		((headSentinel) this.table[pos]).wrUnlockList();
+	}
+	
+	public void readLock(K key){
+		int pos = this.calcTablePos(key);
+		((headSentinel) this.table[pos]).rdLockList();
+	}
+	
+	public void readUnlock(K key){
+		int pos = this.calcTablePos(key);
+		((headSentinel) this.table[pos]).rdUnlockList();
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -128,12 +149,18 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public V get(K key) { //read thread's will see the last update of the hashmap ... no need for sync
+	public V get(K key) { //read thread's will see the last update of the hashmap ... implicit read Lock
 		int pos = this.calcTablePos(key);
+		
+		this.readLock(key);
+		
 		Node n = this.table[pos].next;
-		while (n != null && !n.key.equals(key)) {
+		while (n != null && !n.key.equals(key)) {// TODO: PERGUNTAR AO PROF PQ Q ISTO DA NULL POINTER QDO SO TEMOS MUTEX LOCKS
 			n = n.next;
 		}
+		
+		this.readUnlock(key);
+		
 		return (V) (n != null ? n.value : null);
 	}
 

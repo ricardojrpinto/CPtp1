@@ -33,6 +33,7 @@ public class Worker {
 	private volatile boolean running; 
 	private volatile boolean pause;
 
+	private int totalReadOps, totalWriteOps;
 	private int totalOperations;
 
 	/**
@@ -107,9 +108,25 @@ public class Worker {
 		}
 
 	}
+	
+	private synchronized void updateReadOperations(int operations) {
+		this.totalReadOps += operations;
+	}
+	
+	private synchronized void updateWriteOperations(int operations) {
+		this.totalWriteOps += operations;
+	}
 
 	private synchronized void updateOperations(int operations) {
 		this.totalOperations += operations;
+	}
+	
+	public synchronized int getTotalReadOperations() {
+		return totalReadOps;
+	}
+	
+	public synchronized int getTotalWriteOperations() {
+		return totalWriteOps;
 	}
 
 	public synchronized int getTotalOperations() {
@@ -121,7 +138,7 @@ public class Worker {
 		private int put;
 		private int del;
 		private int get;
-		private int count;
+		private int count, readCount, writeCount;
 		private Random rand;
 		private volatile boolean paused;
 
@@ -136,6 +153,8 @@ public class Worker {
 			this.del = del;
 			this.get = get;
 			this.count = 0;
+			this.readCount = 0;
+			this.writeCount = 0;
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
@@ -229,23 +248,26 @@ public class Worker {
 				if (op < put) {
 					Article a = generateArticle();
 					repository.insertArticle(a);
-									
+					writeCount++;
 				} else if (op < put + del) {
 					int id = rand.nextInt(dictSize);
 					repository.removeArticle(id);
-					
+					writeCount++;
 				} else if (op < put + del + (get / 2)) {
 					List<String> list = generateListOfWords();
 					repository.findArticleByAuthor(list); // 50 % lookup by author
+					readCount++;
 				} else {
 					List<String> list = generateListOfWords();
 					repository.findArticleByKeyword(list); //other 50 % by keyword
+					readCount++;
 				}
 				
 				count++;
 
 			}
-
+			updateReadOperations(readCount);
+			updateWriteOperations(writeCount);
 			updateOperations(count);
 
 		}

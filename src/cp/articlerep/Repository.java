@@ -25,11 +25,11 @@ public class Repository {
 		
 	public boolean insertArticle(Article a) {
 		
-		byArticleId.lock(a.getId());
+		byArticleId.writeLock(a.getId());
 		
 		boolean v = protectedInsertion(a);
 		
-		byArticleId.unlock(a.getId());
+		byArticleId.writeUnlock(a.getId());
 		
 		return v;
 	}
@@ -47,7 +47,7 @@ public class Repository {
 		while (authors.hasNext()) {
 			String name = authors.next();
 			
-			byAuthor.lock(name);
+			byAuthor.writeLock(name);
 			
 			List<Article> ll = byAuthor.get(name);
 			if (ll == null) {
@@ -56,14 +56,14 @@ public class Repository {
 			}
 			ll.add(a);
 			
-			byAuthor.unlock(name);
+			byAuthor.writeUnlock(name);
 		}
 
 		Iterator<String> keywords = a.getKeywords().iterator();
 		while (keywords.hasNext()) {
 			String keyword = keywords.next();
 			
-			byKeyword.lock(keyword);
+			byKeyword.writeLock(keyword);
 			
 			List<Article> ll = byKeyword.get(keyword);
 			if (ll == null) {
@@ -72,7 +72,7 @@ public class Repository {
 			} 
 			ll.add(a);
 			
-			byKeyword.unlock(keyword);
+			byKeyword.writeUnlock(keyword);
 		}
 
 		byArticleId.put(a.getId(), a);
@@ -84,14 +84,14 @@ public class Repository {
 	 */
 	public void removeArticle(int id){
 
-		byArticleId.lock(id);
+		byArticleId.writeLock(id);
 			Article a = byArticleId.get(id);
 			if (a == null){
-				byArticleId.unlock(id);
+				byArticleId.writeUnlock(id);
 				return;
 			}
 			protectedRemoval(a);
-		byArticleId.unlock(a.getId());
+		byArticleId.writeUnlock(a.getId());
 	}
 	
 	public void protectedRemoval(Article a) {
@@ -103,7 +103,7 @@ public class Repository {
 		while (keywords.hasNext()) {
 			String keyword = keywords.next();
 
-			byKeyword.lock(keyword);
+			byKeyword.writeLock(keyword);
 			
 			List<Article> ll = byKeyword.get(keyword);
 			if (ll != null) {
@@ -126,14 +126,14 @@ public class Repository {
 				
 			}
 			
-			byKeyword.unlock(keyword);
+			byKeyword.writeUnlock(keyword);
 		}
 
 		Iterator<String> authors = a.getAuthors().iterator();
 		while (authors.hasNext()) {
 			String name = authors.next();
 			
-			byAuthor.lock(name);
+			byAuthor.writeLock(name);
 			
 			List<Article> ll = byAuthor.get(name);
 			if (ll != null) {
@@ -155,12 +155,12 @@ public class Repository {
 				
 			}
 			
-			byAuthor.unlock(name);
+			byAuthor.writeUnlock(name);
 			
 		}
 	}
 	/*
-	 * Given a Set A of size #nFindList of authors create a set Pi of articles containing i as author
+	 * Given a Set A of size #no need for syncnFindList of authors create a set Pi of articles containing i as author
 	 * It is a 'read' type operation 
 	 * */
 	public List<Article> findArticleByAuthor(List<String> authors) {
@@ -169,7 +169,9 @@ public class Repository {
 		Iterator<String> it = authors.iterator();
 		while (it.hasNext()) {
 			String name = it.next();
+			
 			List<Article> as = byAuthor.get(name);
+			
 			if (as != null) {
 				Iterator<Article> ait = as.iterator();
 				while (ait.hasNext()) {
