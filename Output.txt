@@ -1,7 +1,7 @@
 
 ******************************************* | Report | *******************************************
-Number of iterations: 2
-Running command: java -cp bin cp/articlerep/MainRep 10 100 500 10 10 80 20 20 3
+Number of iterations: 1
+Running command: java -cp bin cp/articlerep/MainRep 10 40 2 50 10 40 2 2 2
 
-Final result: 632822
+Final result: 1203150
 

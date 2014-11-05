@@ -23,12 +23,12 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 	
 	private static class headSentinel extends Node{
 		
-		ReadWriteLock rwl;
-		Lock r,w;
+		private ReadWriteLock rwl;
+		private Lock r,w;
 		
 		public headSentinel(){
 			super(null,null,null); 
-			rwl = new ReentrantReadWriteLock();
+			rwl = new ReentrantReadWriteLock(true);
 			r = rwl.readLock();
 			w = rwl.writeLock();
 			}
