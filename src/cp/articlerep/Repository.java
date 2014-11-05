@@ -16,43 +16,20 @@ public class Repository {
 	private Map<String, List<Article>> byAuthor;
 	private Map<String, List<Article>> byKeyword;
 	private Map<Integer, Article> byArticleId;
-	private boolean [] usedID;
 	
 	public Repository(int nkeys) {
 		this.byAuthor = new HashTable<String, List<Article>>(nkeys*2);
 		this.byKeyword = new HashTable<String, List<Article>>(nkeys*2);
-		this.byArticleId = new HashTable<Integer, Article>(nkeys*2);
-		this.usedID = new boolean [nkeys];
-		
-		for(int i = 0; i < nkeys; i++)
-			usedID[i] = false;
-	}
-	
-	public synchronized boolean markID(int id){
-		if(usedID[id])
-			return false;
-			
-		usedID[id] = true;
-		
-		return usedID[id];
-	}
-	
-	public synchronized void unMarkID(int id){
-		usedID[id] =false;
+		this.byArticleId = new HashTable<Integer, Article>(nkeys*2);	
 	}
 		
 	public boolean insertArticle(Article a) {
 		
-		//if(!a.mark())//wat
-			//return false;
-		
-		byArticleId.lock(a.getId());
+		byArticleId.writeLock(a.getId());
 		
 		boolean v = protectedInsertion(a);
 		
-		byArticleId.unlock(a.getId());
-		
-		//a.unMark();
+		byArticleId.writeUnlock(a.getId());
 		
 		return v;
 	}
@@ -66,28 +43,27 @@ public class Repository {
 		if (byArticleId.contains(a.getId()))
 			return false;
 
-		Iterator<String> authors = a.getAuthors().iterator();//This section needs sync----> Medium or fine lock
+		Iterator<String> authors = a.getAuthors().iterator();
 		while (authors.hasNext()) {
 			String name = authors.next();
 			
-			byAuthor.lock(name);
+			byAuthor.writeLock(name);
 			
 			List<Article> ll = byAuthor.get(name);
-			if (ll == null) {//situaçao possivel: dois threads (t1 e t2) fazem update ao autor 'x' os dois lêm o valor null... o t1 insere uma lista e
-							// um novo artigo o t2 esmaga essa lista com outra nova lista e o seu artigo
+			if (ll == null) {
 				ll = new LinkedList<Article>();
 				byAuthor.put(name, ll);
 			}
 			ll.add(a);
 			
-			byAuthor.unlock(name);
-		}//<--------------------------------------
+			byAuthor.writeUnlock(name);
+		}
 
 		Iterator<String> keywords = a.getKeywords().iterator();
 		while (keywords.hasNext()) {
 			String keyword = keywords.next();
 			
-			byKeyword.lock(keyword);
+			byKeyword.writeLock(keyword);
 			
 			List<Article> ll = byKeyword.get(keyword);
 			if (ll == null) {
@@ -96,7 +72,7 @@ public class Repository {
 			} 
 			ll.add(a);
 			
-			byKeyword.unlock(keyword);
+			byKeyword.writeUnlock(keyword);
 		}
 
 		byArticleId.put(a.getId(), a);
@@ -107,6 +83,7 @@ public class Repository {
 	/*Given an id, remove article from byArticleId, byAuthor, byKeyword tables
 	 */
 	public void removeArticle(int id){
+<<<<<<< HEAD
 		
 		//Article a = byArticleId.get(id);
 
@@ -121,8 +98,17 @@ public class Repository {
 				return;
 			}
 				
+=======
+
+		byArticleId.writeLock(id);
+			Article a = byArticleId.get(id);
+			if (a == null){
+				byArticleId.writeUnlock(id);
+				return;
+			}
+>>>>>>> cce7298b0bd9b291bef87752c3f699f09274e712
 			protectedRemoval(a);
-		byArticleId.unlock(a.getId());
+		byArticleId.writeUnlock(a.getId());
 	}
 	
 	private void protectedRemoval(Article a) {
@@ -134,7 +120,7 @@ public class Repository {
 		while (keywords.hasNext()) {
 			String keyword = keywords.next();
 
-			byKeyword.lock(keyword);
+			byKeyword.writeLock(keyword);
 			
 			List<Article> ll = byKeyword.get(keyword);
 			if (ll != null) {
@@ -155,17 +141,21 @@ public class Repository {
 					byKeyword.remove(keyword);
 				}
 				
-				
 			}
+<<<<<<< HEAD
 			byArticleId.remove(id);
 			byKeyword.unlock(keyword);
+=======
+			
+			byKeyword.writeUnlock(keyword);
+>>>>>>> cce7298b0bd9b291bef87752c3f699f09274e712
 		}
 
 		Iterator<String> authors = a.getAuthors().iterator();
 		while (authors.hasNext()) {
 			String name = authors.next();
 			
-			byAuthor.lock(name);
+			byAuthor.writeLock(name);
 			
 			List<Article> ll = byAuthor.get(name);
 			if (ll != null) {
@@ -187,12 +177,12 @@ public class Repository {
 				
 			}
 			
-			byAuthor.unlock(name);
+			byAuthor.writeUnlock(name);
 			
 		}
 	}
 	/*
-	 * Given a Set A of size #nFindList of authors create a set Pi of articles containing i as author
+	 * Given a Set A of size #no need for syncnFindList of authors create a set Pi of articles containing i as author
 	 * It is a 'read' type operation 
 	 * */
 	public List<Article> findArticleByAuthor(List<String> authors) {
@@ -201,7 +191,9 @@ public class Repository {
 		Iterator<String> it = authors.iterator();
 		while (it.hasNext()) {
 			String name = it.next();
+			
 			List<Article> as = byAuthor.get(name);
+			
 			if (as != null) {
 				Iterator<Article> ait = as.iterator();
 				while (ait.hasNext()) {
@@ -281,8 +273,8 @@ public class Repository {
 		System.out.println("Checking for inconsistent articles at Authors Table");
 		Iterator<List<Article>> byAuthList= byAuthor.values();
 		
-		while(byAuthList.hasNext()){ //verifies if does'nt exists 'phantom' articles i.e if a author
-							//contains an article that does not exists in byArticleId table then it is a inconcistency
+		while(byAuthList.hasNext()){ //verifies if does not exists 'phantom' articles i.e if a author
+							//contains an article that does not exists in byArticleId table then there is an inconcistency
 			List<Article> l = byAuthList.next();
 			Iterator<Article> ait = l.iterator();
 			while(ait.hasNext()){

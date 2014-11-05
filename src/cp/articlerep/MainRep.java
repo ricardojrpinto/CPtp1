@@ -80,9 +80,10 @@ public class MainRep {
 		
 		//validation check at the end? when the time arg is not a multiple of 5 (n mod 5 != 0)
 		System.out.println("Total time: " + ((end_time - start_time) / 1000) + " seconds");
-		System.out.println("Operation rate: "
-				+ Math.round(run.getTotalOperations()
-						/ ((end_time - start_time) / 1000.0)) + " ops/s");
+		System.out.println("Total read rate: "+ Math.round(run.getTotalReadOperations()/((end_time - start_time) / 1000.0)) + " ops/s");
+		System.out.println("Total write rate: "+ Math.round(run.getTotalWriteOperations()
+				/ ((end_time - start_time) / 1000.0)) + " ops/s");
+		System.out.println("Operation rate: "+ Math.round(run.getTotalOperations()/ ((end_time - start_time) / 1000.0)) + " ops/s");
 	}
 
 }

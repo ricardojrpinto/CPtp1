@@ -12,8 +12,11 @@ public interface Map<K extends Comparable<K>, V> {
 	public Iterator<V> values();
 	public Iterator<K> keys();
 	
-	public void lock(K i);
-	public void unlock(K key);
+	public void writeLock(K key);
+	public void writeUnlock(K key);
+	
+	public void readLock(K key);
+	public void readUnlock(K key);
 	
 	
 	public boolean validate();
