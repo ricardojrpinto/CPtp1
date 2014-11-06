@@ -1,12 +1,14 @@
 package cp.articlerep;
 
 import java.util.HashSet;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import cp.articlerep.ds.HashTable;
 import cp.articlerep.ds.Iterator;
 import cp.articlerep.ds.LinkedList;
 import cp.articlerep.ds.List;
 import cp.articlerep.ds.Map;
-import cp.articlerep.ds.HashTable;
 
 /**
  * @author Ricardo Dias
@@ -16,11 +18,13 @@ public class Repository {
 	private Map<String, List<Article>> byAuthor;
 	private Map<String, List<Article>> byKeyword;
 	private Map<Integer, Article> byArticleId;
+	private ReadWriteLock refLock;					//TODO added
 	
 	public Repository(int nkeys) {
 		this.byAuthor = new HashTable<String, List<Article>>(nkeys*2);
 		this.byKeyword = new HashTable<String, List<Article>>(nkeys*2);
 		this.byArticleId = new HashTable<Integer, Article>(nkeys*2);	
+		this.refLock = new ReentrantReadWriteLock(false);
 	}
 		
 	public boolean insertArticle(Article a) {
@@ -42,21 +46,22 @@ public class Repository {
 
 		if (byArticleId.contains(a.getId()))
 			return false;
+		byArticleId.put(a.getId(), a);
 
-		//TODO MUTEX WRITELOCK1
+		//MUTEX WRITELOCK
+		refLock.readLock().lock();
+		
 		Iterator<String> authors = a.getAuthors().iterator();
 		while (authors.hasNext()) {
 			String name = authors.next();
 			
 			byAuthor.writeLock(name);
-			
 			List<Article> ll = byAuthor.get(name);
 			if (ll == null) {
 				ll = new LinkedList<Article>();
 				byAuthor.put(name, ll);
 			}
 			ll.add(a);
-			
 			byAuthor.writeUnlock(name);
 		}
 
@@ -65,19 +70,16 @@ public class Repository {
 			String keyword = keywords.next();
 			
 			byKeyword.writeLock(keyword);
-			
 			List<Article> ll = byKeyword.get(keyword);
 			if (ll == null) {
 				ll = new LinkedList<Article>();
 				byKeyword.put(keyword, ll);
 			} 
 			ll.add(a);
-			
 			byKeyword.writeUnlock(keyword);
 		}
-		//TODO MUTEX WRITEUNLOCK1
-
-		byArticleId.put(a.getId(), a);
+		//MUTEX WRITEUNLOCK
+		refLock.readLock().unlock();
 
 		return true;
 	}
@@ -101,7 +103,8 @@ public class Repository {
 		int id = a.getId();
 		byArticleId.remove(id);
 	
-		//TODO MUTEX WRITELOCK1
+		//MUTEX WRITELOCK
+		refLock.readLock().lock();
 		Iterator<String> keywords = a.getKeywords().iterator();
 		
 		while (keywords.hasNext()) {
@@ -162,7 +165,8 @@ public class Repository {
 			byAuthor.writeUnlock(name);
 			
 		}
-		//TODO MUTEX WRITEUNLOCK1
+		//MUTEX WRITEUNLOCK
+		refLock.readLock().unlock();
 	}
 	/*
 	 * Given a Set A of size #no need for syncnFindList of authors create a set Pi of articles containing i as author
@@ -171,7 +175,9 @@ public class Repository {
 	public List<Article> findArticleByAuthor(List<String> authors) {
 		List<Article> res = new LinkedList<Article>();
 
-		//TODO MUTEX READLOCK1
+		//MUTEX READLOCK
+		refLock.writeLock().lock();
+		
 		Iterator<String> it = authors.iterator();
 		while (it.hasNext()) {
 			String name = it.next();
@@ -186,7 +192,8 @@ public class Repository {
 				}
 			}
 		}
-		//TODO MUTEX READUNLOCK1
+		//MUTEX READUNLOCK
+		refLock.writeLock().unlock();
 
 		return res;
 	}
@@ -196,6 +203,9 @@ public class Repository {
 	public List<Article> findArticleByKeyword(List<String> keywords) {
 		List<Article> res = new LinkedList<Article>();
 
+		//MUTEX READLOCK
+		refLock.writeLock().lock();
+		
 		Iterator<String> it = keywords.iterator();
 		while (it.hasNext()) {
 			String keyword = it.next();
@@ -208,6 +218,9 @@ public class Repository {
 				}
 			}
 		}
+		
+		//MUTEX READUNLOCK
+		refLock.writeLock().unlock();
 
 		return res;
 	}
