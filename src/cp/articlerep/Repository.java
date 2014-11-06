@@ -24,7 +24,7 @@ public class Repository {
 		this.byAuthor = new HashTable<String, List<Article>>(nkeys*2);
 		this.byKeyword = new HashTable<String, List<Article>>(nkeys*2);
 		this.byArticleId = new HashTable<Integer, Article>(nkeys*2);	
-		this.refLock = new ReentrantReadWriteLock(false);
+		this.refLock = new ReentrantReadWriteLock();
 	}
 		
 	public boolean insertArticle(Article a) {
@@ -49,37 +49,34 @@ public class Repository {
 		byArticleId.put(a.getId(), a);
 
 		//MUTEX WRITELOCK
-		refLock.readLock().lock();
+		refLock.writeLock().lock();
 		
 		Iterator<String> authors = a.getAuthors().iterator();
 		while (authors.hasNext()) {
 			String name = authors.next();
 			
-			byAuthor.writeLock(name);
+			
 			List<Article> ll = byAuthor.get(name);
 			if (ll == null) {
 				ll = new LinkedList<Article>();
 				byAuthor.put(name, ll);
 			}
 			ll.add(a);
-			byAuthor.writeUnlock(name);
 		}
 
 		Iterator<String> keywords = a.getKeywords().iterator();
 		while (keywords.hasNext()) {
 			String keyword = keywords.next();
 			
-			byKeyword.writeLock(keyword);
 			List<Article> ll = byKeyword.get(keyword);
 			if (ll == null) {
 				ll = new LinkedList<Article>();
 				byKeyword.put(keyword, ll);
 			} 
 			ll.add(a);
-			byKeyword.writeUnlock(keyword);
 		}
 		//MUTEX WRITEUNLOCK
-		refLock.readLock().unlock();
+		refLock.writeLock().unlock();
 
 		return true;
 	}
@@ -104,7 +101,7 @@ public class Repository {
 		byArticleId.remove(id);
 	
 		//MUTEX WRITELOCK
-		refLock.readLock().lock();
+		refLock.writeLock().lock();
 		Iterator<String> keywords = a.getKeywords().iterator();
 		
 		while (keywords.hasNext()) {
@@ -166,7 +163,7 @@ public class Repository {
 			
 		}
 		//MUTEX WRITEUNLOCK
-		refLock.readLock().unlock();
+		refLock.writeLock().unlock();
 	}
 	/*
 	 * Given a Set A of size #no need for syncnFindList of authors create a set Pi of articles containing i as author
@@ -176,7 +173,7 @@ public class Repository {
 		List<Article> res = new LinkedList<Article>();
 
 		//MUTEX READLOCK
-		refLock.writeLock().lock();
+		refLock.readLock().lock();
 		
 		Iterator<String> it = authors.iterator();
 		while (it.hasNext()) {
@@ -193,7 +190,7 @@ public class Repository {
 			}
 		}
 		//MUTEX READUNLOCK
-		refLock.writeLock().unlock();
+		refLock.readLock().unlock();
 
 		return res;
 	}
@@ -204,7 +201,7 @@ public class Repository {
 		List<Article> res = new LinkedList<Article>();
 
 		//MUTEX READLOCK
-		refLock.writeLock().lock();
+		refLock.readLock().lock();
 		
 		Iterator<String> it = keywords.iterator();
 		while (it.hasNext()) {
@@ -220,7 +217,7 @@ public class Repository {
 		}
 		
 		//MUTEX READUNLOCK
-		refLock.writeLock().unlock();
+		refLock.readLock().unlock();
 
 		return res;
 	}
