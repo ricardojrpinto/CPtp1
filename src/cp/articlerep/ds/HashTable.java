@@ -28,7 +28,7 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 		
 		public headSentinel(){
 			super(null,null,null); 
-			rwl = new ReentrantReadWriteLock(true);
+			rwl = new ReentrantReadWriteLock();
 			r = rwl.readLock();
 			w = rwl.writeLock();
 			}
@@ -155,12 +155,7 @@ public class HashTable<K extends Comparable<K>, V> implements Map<K, V> {
 		this.readLock(key);
 		
 		Node n = this.table[pos].next;
-<<<<<<< HEAD
-		
 		while (n != null && !n.key.equals(key)) {
-=======
-		while (n != null && !n.key.equals(key)) {// TODO: PERGUNTAR AO PROF PQ Q ISTO DA NULL POINTER QDO SO TEMOS MUTEX LOCKS
->>>>>>> cce7298b0bd9b291bef87752c3f699f09274e712
 			n = n.next;
 		}
 		

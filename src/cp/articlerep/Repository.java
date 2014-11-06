@@ -43,6 +43,7 @@ public class Repository {
 		if (byArticleId.contains(a.getId()))
 			return false;
 
+		//TODO MUTEX WRITELOCK1
 		Iterator<String> authors = a.getAuthors().iterator();
 		while (authors.hasNext()) {
 			String name = authors.next();
@@ -74,6 +75,7 @@ public class Repository {
 			
 			byKeyword.writeUnlock(keyword);
 		}
+		//TODO MUTEX WRITEUNLOCK1
 
 		byArticleId.put(a.getId(), a);
 
@@ -83,22 +85,6 @@ public class Repository {
 	/*Given an id, remove article from byArticleId, byAuthor, byKeyword tables
 	 */
 	public void removeArticle(int id){
-<<<<<<< HEAD
-		
-		//Article a = byArticleId.get(id);
-
-//		if (a == null)
-//			return;
-		//if (a.mark())
-		//byArticleId.lock(a.getId());
-		byArticleId.lock(id);
-			Article a = byArticleId.get(id);
-			if(a == null){
-				byArticleId.unlock(id);
-				return;
-			}
-				
-=======
 
 		byArticleId.writeLock(id);
 			Article a = byArticleId.get(id);
@@ -106,7 +92,6 @@ public class Repository {
 				byArticleId.writeUnlock(id);
 				return;
 			}
->>>>>>> cce7298b0bd9b291bef87752c3f699f09274e712
 			protectedRemoval(a);
 		byArticleId.writeUnlock(a.getId());
 	}
@@ -114,9 +99,11 @@ public class Repository {
 	private void protectedRemoval(Article a) {
 		
 		int id = a.getId();
+		byArticleId.remove(id);
 	
-
+		//TODO MUTEX WRITELOCK1
 		Iterator<String> keywords = a.getKeywords().iterator();
+		
 		while (keywords.hasNext()) {
 			String keyword = keywords.next();
 
@@ -142,13 +129,8 @@ public class Repository {
 				}
 				
 			}
-<<<<<<< HEAD
-			byArticleId.remove(id);
-			byKeyword.unlock(keyword);
-=======
 			
 			byKeyword.writeUnlock(keyword);
->>>>>>> cce7298b0bd9b291bef87752c3f699f09274e712
 		}
 
 		Iterator<String> authors = a.getAuthors().iterator();
@@ -180,6 +162,7 @@ public class Repository {
 			byAuthor.writeUnlock(name);
 			
 		}
+		//TODO MUTEX WRITEUNLOCK1
 	}
 	/*
 	 * Given a Set A of size #no need for syncnFindList of authors create a set Pi of articles containing i as author
@@ -188,6 +171,7 @@ public class Repository {
 	public List<Article> findArticleByAuthor(List<String> authors) {
 		List<Article> res = new LinkedList<Article>();
 
+		//TODO MUTEX READLOCK1
 		Iterator<String> it = authors.iterator();
 		while (it.hasNext()) {
 			String name = it.next();
@@ -202,6 +186,7 @@ public class Repository {
 				}
 			}
 		}
+		//TODO MUTEX READUNLOCK1
 
 		return res;
 	}
